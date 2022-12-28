@@ -10,10 +10,13 @@
 library(raster)
 library(sf)
 library(terra)
+library(tidyverse)
+library(tidyterra)
 
 #https://www.ncei.noaa.gov/products/etopo-global-relief-model
 world_elev <- rast("H:\\My Drive\\RPGs\\Worldbuilding\\Hexcrawler\\ETOPO_2022_v1_60s_N90W180_bed.tif")
-test_area <- vect("H:\\My Drive\\RPGs\\Worldbuilding\\Hexcrawler\\test_AOI.gpkg")
+test_area <- st_read("H:\\My Drive\\RPGs\\Worldbuilding\\Hexcrawler\\test_AOI.gpkg") %>%
+  st_transform('EPSG:4087')
 
 # function to create a hex grid over an area, sample elevation
 hexify <- function(object){
@@ -24,12 +27,21 @@ hexify <- function(object){
     square = FALSE,
     flat_topped = TRUE
   )
-  hexes <- vect(hexes)
-  hex_mean <- extract(world_elev, hexes, fun = mean, na.rm = TRUE)
-  return(hex_mean)
+  hexes <- vect(hexes) %>% project(crs(world_elev))
+  plot(hexes)
+  hex_mean <- terra::extract(world_elev, hexes, fun = mean, bind=TRUE, na.rm = TRUE) %>%
+    rename(mean_elev = ETOPO_2022_v1_60s_N90W180_bed)
+  hex_std <- terra::extract(world_elev, hex_mean, fun=sd, bind=TRUE) %>%
+    rename(sd_elev = ETOPO_2022_v1_60s_N90W180_bed)
+  return(hex_std)
 }
 
-hexify(test_area)
+test_hex <- hexify(test_area) 
+
+plot(test_hex)
+
+plot(project(vect(test_area), crs(world_elev)))
+plot(test_hex, add = TRUE)
 
 # function to sample major rivers(?)
 
