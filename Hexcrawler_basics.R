@@ -38,11 +38,37 @@ hexify <- function(object){
 
 test_hex <- hexify(test_area) 
 
-plot(test_hex)
+test_hex <- test_hex %>%
+  mutate(
+    Terrain = ifelse(mean_elev < 0, 'Water', 
+                     ifelse(sd_elev < 150, 'Flatland',
+                            ifelse(sd_elev < 300, 'Hills',
+                                   'Mountains')))
+  ) 
+
+plot(test_hex, 'Terrain')
+plot(test_hex, 'sd_elev')
 
 plot(project(vect(test_area), crs(world_elev)))
 plot(test_hex, add = TRUE)
 
+longlat <- c(c(33.04688), c(44.08))
+
+lldf <- as.data.frame(cbind(33.04, 44.08))
+colnames(lldf) <- c('lon', 'lat')
+
+marker_pt <- st_as_sf(lldf, coords = c('lon', 'lat'), crs = 4326) %>% st_transform(4087)
+
+n_pt <- marker_pt$geometry + c(0, 30*1609/2)
+s_pt <- marker_pt$geometry + c(0, 30*-1609/2)
+e_pt <- marker_pt$geometry + c(30*1609/2, 0)
+w_pt <- marker_pt$geometry + c(30*-1609/2, 0)
+
+bb_test <- st_bbox(c(n_pt, s_pt, e_pt, w_pt)) 
+
+bb_poly <- st_as_sfc(bb_test) %>%
+  st_as_sf(crs=4087) %>%
+  st_transform(4326)
 # function to sample major rivers(?)
 
 # function to 
