@@ -1,6 +1,6 @@
-# hexcrawler
+# hexcrawlR
 
-This an R app for generating hex terrain maps with elevation and land cover information. 
+This an R shiny app for generating hex terrain maps with elevation and land cover information. 
 It is intended for use in tabletop role-playing games, but could likely be adapted with
 ease for data visualization purposes.
 
