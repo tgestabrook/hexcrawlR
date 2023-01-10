@@ -16,6 +16,9 @@ lc_legend <- as.data.frame(cbind(
   'key' = c(1:11),
   'label' = c('Urban', 'Cropland', 'Grassland', 'Forest', 'Scrub', 'Wetland', 'Mangrove', 'Barren', 'Desert', 'Snow', 'Water')
 ))
+#http://ihp-wins.unesco.org/layers/geonode:world_rivers
+world_river <- st_read("H:\\My Drive\\RPGs\\Worldbuilding\\Hexcrawler\\unesco_rivers.geojson")
+
 
 stupid_join_function <- function(vec){
   outvec <- c()
@@ -133,8 +136,14 @@ server <- function(input, output) {
                                     ifelse(sd_elev < 300, 'Hills',
                                           'Mountains')))))
     
+    #river_hexes <- relate(hex_std, world_river, relation = 'intersects')
+    #print(river_hexes)
+    
     hex_std <- sf::st_as_sf(hex_std)
     hex_out <<- hex_std
+    
+    hex_out$River <- hex_out[world_river]
+    map_bounds <- as.character(st_bbox(hex_out))
     
     leafletProxy('WorldMap') %>%
       clearShapes() %>%
@@ -143,7 +152,8 @@ server <- function(input, output) {
                   weight = 0.5,
                   opacity = 0.9,
                   fillOpacity = 0.9,
-                  fillColor = ~terrainPal(hex_std[['Terrain']]))
+                  fillColor = ~terrainPal(hex_std[['Terrain']])) %>%
+      fitBounds(map_bounds[1], map_bounds[2], map_bounds[3], map_bounds[4])
   })
   
   output$download_shp <- downloadHandler(
