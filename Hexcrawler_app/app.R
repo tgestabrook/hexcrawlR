@@ -12,12 +12,13 @@ library(tidyterra)
 world_elev <- rast("H:\\My Drive\\RPGs\\Worldbuilding\\Hexcrawler\\ETOPO_2022_v1_60s_N90W180_bed.tif")
 #https://data.apps.fao.org/map/catalog/srv/eng/catalog.search#/metadata/ba4526fd-cdbf-4028-a1bd-5a559c4bff38
 world_lc <- rast("H:\\My Drive\\RPGs\\Worldbuilding\\Hexcrawler\\hexcrawler\\GLC_SHARE_DominantLC.tif")
+
 lc_legend <- as.data.frame(cbind(
   'key' = c(1:11),
   'label' = c('Urban', 'Cropland', 'Grassland', 'Forest', 'Scrub', 'Wetland', 'Mangrove', 'Barren', 'Desert', 'Snow', 'Water')
 ))
-#http://ihp-wins.unesco.org/layers/geonode:world_rivers
-world_river <- st_read("H:\\My Drive\\RPGs\\Worldbuilding\\Hexcrawler\\unesco_rivers.geojson")
+# #http://ihp-wins.unesco.org/layers/geonode:world_rivers
+# world_river <- st_read("H:\\My Drive\\RPGs\\Worldbuilding\\Hexcrawler\\unesco_rivers.geojson")
 
 
 stupid_join_function <- function(vec){
