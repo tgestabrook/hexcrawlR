@@ -38,7 +38,7 @@ terrainPal <- colorFactor(palette = terrainCols, domain=c('Water', 'Flatlands', 
 ui <- fluidPage(
 
     # Application title
-    titlePanel("HexCrawler"),
+    titlePanel("HexCrawlR"),
 
     # Sidebar with a slider input for sea level 
     sidebarLayout(
@@ -143,7 +143,7 @@ server <- function(input, output) {
     hex_std <- sf::st_as_sf(hex_std)
     hex_out <<- hex_std
     
-    hex_out$River <- hex_out[world_river]
+    #hex_out$River <- hex_out[world_river]
     map_bounds <- as.character(st_bbox(hex_out))
     
     leafletProxy('WorldMap') %>%
