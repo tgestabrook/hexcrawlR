@@ -4,7 +4,7 @@ This an R shiny app for generating hex terrain maps with elevation and land cove
 It is intended for use in tabletop role-playing games, but could likely be adapted with
 ease for data visualization purposes.
 
-![](Screenshot 2023-02-03 171454.png)
+![](/Screenshot 2023-02-03 171454.png)
 
 To use the app, click on the map to place the center of your desired hex grid. Adjust
 the sliders to your desired height and width, and press 'Generate'. 
