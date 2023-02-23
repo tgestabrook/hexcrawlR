@@ -45,7 +45,7 @@ ui <- fluidPage(
       sidebarPanel(
         "Select the desired extent and sea level of your hexcrawl grid, then click the map to designate the center of your desired area. \n\n
         Hexcrawler will automatically sample real-world elevation, terrain roughness, and landcover.",
-        
+        sliderInput('hex_size', 'Hex Size (mi)', min = 1, max = 30, value = 6),
         sliderInput('x_ext', "East-West extent (mi)", min = 6, max = 300, value = 30),
         sliderInput('y_ext', "North-South extent (mi)", min = 6, max = 300, value = 30),
         sliderInput("sealevel",
@@ -113,7 +113,7 @@ server <- function(input, output) {
     
     hexes <- st_make_grid(
       bb_poly,
-      cellsize = c(9656,9656),
+      cellsize = c(input$hex_size*1609,input$hex_size*1609),
       what = "polygons",
       square = FALSE,
       flat_topped = TRUE
