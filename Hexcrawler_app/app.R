@@ -9,9 +9,9 @@ library(tidyterra)
 
 ### Global variables
 #https://www.ncei.noaa.gov/products/etopo-global-relief-model
-world_elev <- rast("H:\\My Drive\\RPGs\\Worldbuilding\\Hexcrawler\\ETOPO_2022_v1_60s_N90W180_bed.tif")
+world_elev <- rast("../ETOPO_2022_v1_60s_N90W180_bed.tif")
 #https://data.apps.fao.org/map/catalog/srv/eng/catalog.search#/metadata/ba4526fd-cdbf-4028-a1bd-5a559c4bff38
-world_lc <- rast("H:\\My Drive\\RPGs\\Worldbuilding\\Hexcrawler\\hexcrawler\\GLC_SHARE_DominantLC.tif")
+world_lc <- rast("../GLC_SHARE_DominantLC.tif")
 
 lc_legend <- as.data.frame(cbind(
   'key' = c(1:11),
@@ -45,7 +45,7 @@ ui <- fluidPage(
       sidebarPanel(
         "Select the desired extent and sea level of your hexcrawl grid, then click the map to designate the center of your desired area. \n\n
         Hexcrawler will automatically sample real-world elevation, terrain roughness, and landcover.",
-        sliderInput('hex_size', 'Hex Size (mi)', min = 1, max = 30, value = 6),
+        sliderInput('hex_size', 'Hex Size (mi)', min = 3, max = 30, value = 6),
         sliderInput('x_ext', "East-West extent (mi)", min = 6, max = 300, value = 30),
         sliderInput('y_ext', "North-South extent (mi)", min = 6, max = 300, value = 30),
         sliderInput("sealevel",
@@ -72,8 +72,8 @@ server <- function(input, output) {
       addMapPane('base_layers', 410) %>%  # This ensures the base layers will render below the clickable polygon layer
       addMapPane('poly_layer', 450) %>%
       addTiles(group = "OSM (default)") %>%
-      addProviderTiles(providers$Stamen.Toner, group = "Toner") %>%
-      addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
+      #addProviderTiles(providers$Stamen.Toner, group = "Toner") %>%
+      #addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
       addProviderTiles(providers$OpenTopoMap, group = "Open Topo Map") %>%
       addProviderTiles(providers$Esri.WorldImagery, group = "ESRI World Imagery") %>%
       addLegend(position = 'bottomright', pal = terrainPal, values = c('Water', 'Flatlands', 'Hills', 'Mountains'))
@@ -89,7 +89,7 @@ server <- function(input, output) {
   observeEvent(input$generate, {
     # check if markers exist
     if(is.null(marker_coord)) {return()}
-    if(input$x_ext * input$y_ext > 5000){showNotification('Large map extent - please be patient.', '', duration = 5, type = 'warning')}
+    if(input$x_ext * input$y_ext > 5000){showNotification('Large map extent - this may take some time.', '', duration = 5, type = 'warning')}
 
     marker_coord <- st_point(cbind(input$WorldMap_click$lng, input$WorldMap_click$lat))
 
@@ -152,7 +152,7 @@ server <- function(input, output) {
                   color = 'black',
                   weight = 0.5,
                   opacity = 0.9,
-                  fillOpacity = 0.9,
+                  fillOpacity = 0.75,
                   fillColor = ~terrainPal(hex_std[['Terrain']])) %>%
       fitBounds(map_bounds[1], map_bounds[2], map_bounds[3], map_bounds[4])
   })

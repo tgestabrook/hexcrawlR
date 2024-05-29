@@ -13,6 +13,7 @@ library(terra)
 library(tidyverse)
 library(tidyterra)
 
+
 #https://www.ncei.noaa.gov/products/etopo-global-relief-model
 world_elev <- rast("H:\\My Drive\\RPGs\\Worldbuilding\\Hexcrawler\\ETOPO_2022_v1_60s_N90W180_bed.tif")
 test_area <- st_read("H:\\My Drive\\RPGs\\Worldbuilding\\Hexcrawler\\test_AOI.gpkg") %>%
@@ -51,6 +52,12 @@ plot(test_hex, 'sd_elev')
 
 plot(project(vect(test_area), crs(world_elev)))
 plot(test_hex, add = TRUE)
+
+test_hex2 <- st_as_sf(test_hex) %>%
+  st_transform(crs(world_river))
+test_hex2[world_river]
+
+plot(test_hex2[world_river], col='red', add = TRUE)
 
 longlat <- c(c(33.04688), c(44.08))
 
