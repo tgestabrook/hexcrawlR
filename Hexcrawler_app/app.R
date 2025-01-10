@@ -2,37 +2,38 @@
 
 library(shiny)
 library(leaflet)
-library(terra)
+#library(terra)
 library(sf)
-library(tidyverse)
-library(tidyterra)
+library(dplyr)
+# library(tidyverse)
+# library(tidyterra)
 
 ### Global variables
 #https://www.ncei.noaa.gov/products/etopo-global-relief-model
-world_elev <- rast("../ETOPO_2022_v1_60s_N90W180_bed.tif")
+#world_elev <- rast("../ETOPO_2022_v1_60s_N90W180_bed.tif")
 #https://data.apps.fao.org/map/catalog/srv/eng/catalog.search#/metadata/ba4526fd-cdbf-4028-a1bd-5a559c4bff38
-world_lc <- rast("../GLC_SHARE_DominantLC.tif")
+#world_lc <- rast("../GLC_SHARE_DominantLC.tif")
 
-lc_legend <- as.data.frame(cbind(
-  'key' = c(1:11),
-  'label' = c('Urban', 'Cropland', 'Grassland', 'Forest', 'Scrub', 'Wetland', 'Mangrove', 'Barren', 'Desert', 'Snow', 'Water')
-))
+# lc_legend <- as.data.frame(cbind(
+#   'key' = c(1:11),
+#   'label' = c('Urban', 'Cropland', 'Grassland', 'Forest', 'Scrub', 'Wetland', 'Mangrove', 'Barren', 'Desert', 'Snow', 'Water')
+# ))
 # #http://ihp-wins.unesco.org/layers/geonode:world_rivers
 # world_river <- st_read("H:\\My Drive\\RPGs\\Worldbuilding\\Hexcrawler\\unesco_rivers.geojson")
 
 
-stupid_join_function <- function(vec){
-  outvec <- c()
-  for (elt in vec){
-    if (!(as.integer(elt) %in% lc_legend$key)){outvec <- c(outvec, NA)}
-    else {outvec <- c(outvec, lc_legend$label[lc_legend$key == as.integer(elt)])}
-  }
-  return(outvec)
-}
+# stupid_join_function <- function(vec){
+#   outvec <- c()
+#   for (elt in vec){
+#     if (!(as.integer(elt) %in% lc_legend$key)){outvec <- c(outvec, NA)}
+#     else {outvec <- c(outvec, lc_legend$label[lc_legend$key == as.integer(elt)])}
+#   }
+#   return(outvec)
+# }
 
 marker_coord <- NULL
-terrainCols <- c('skyblue2', 'darkolivegreen3', 'tan3', 'ivory4')
-terrainPal <- colorFactor(palette = terrainCols, domain=c('Water', 'Flatlands', 'Hills', 'Mountains'), na.color = "#FFFFFF00", ordered=TRUE)
+# terrainCols <- c('skyblue2', 'darkolivegreen3', 'tan3', 'ivory4')
+# terrainPal <- colorFactor(palette = terrainCols, domain=c('Water', 'Flatlands', 'Hills', 'Mountains'), na.color = "#FFFFFF00", ordered=TRUE)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -43,18 +44,20 @@ ui <- fluidPage(
     # Sidebar with a slider input for sea level 
     sidebarLayout(
       sidebarPanel(
-        "Select the desired extent and sea level of your hexcrawl grid, then click the map to designate the center of your desired area. \n\n
-        Hexcrawler will automatically sample real-world elevation, terrain roughness, and landcover.",
+        h4("Instructions:"),
+        "Select the desired extent and sea level of your hexcrawl grid, click the map to designate the center of your desired area, and press 'Generate hexes'. Toggle between different basemaps using the layers panel in the top right of the map.", br(), br(),
+        "Note that Leaflet uses the WGS 84 Web Mercator coordinate reference system, so hexes generated at Southern or Morthern latitudes may appear stretched (but will have correct spacing).", br(), br(),
         sliderInput('hex_size', 'Hex Size (mi)', min = 3, max = 30, value = 6),
         sliderInput('x_ext', "East-West extent (mi)", min = 6, max = 300, value = 30),
         sliderInput('y_ext', "North-South extent (mi)", min = 6, max = 300, value = 30),
-        sliderInput("sealevel",
-                    "Sea Level:",
-                    min = -1000,
-                    max = 5000,
-                    value = 0,
-                    step = 10),
-        actionButton('generate', 'Generate hexes'),
+        # sliderInput("sealevel",
+        #             "Sea Level:",
+        #             min = -1000,
+        #             max = 5000,
+        #             value = 0,
+        #             step = 10),
+        radioButtons('hexcolor', "Hex color", choices = c('black', 'white', 'blue', 'red'), selected = 'black'),
+        actionButton('generate', 'Generate'),
         downloadButton('download_shp', 'Download Hexes')
       ),
 
@@ -71,12 +74,14 @@ server <- function(input, output) {
     leaflet() %>%
       addMapPane('base_layers', 410) %>%  # This ensures the base layers will render below the clickable polygon layer
       addMapPane('poly_layer', 450) %>%
-      addTiles(group = "OSM (default)") %>%
+      #addTiles(group = "OSM (Default") %>%
       #addProviderTiles(providers$Stamen.Toner, group = "Toner") %>%
       #addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
-      addProviderTiles(providers$OpenTopoMap, group = "Open Topo Map") %>%
+      #addProviderTiles(providers$OpenTopoMap, group = "OpenTopoMap") %>%
       addProviderTiles(providers$Esri.WorldImagery, group = "ESRI World Imagery") %>%
-      addLegend(position = 'bottomright', pal = terrainPal, values = c('Water', 'Flatlands', 'Hills', 'Mountains'))
+      addProviderTiles(providers$Stadia.StamenTerrain, group = "Stadia Stamen Terrain") %>%
+      addLayersControl(baseGroups = c("Stadia Stamen Terrain", "ESRI World Imagery"), position = "topright")
+      # addLegend(position = 'bottomright', pal = terrainPal, values = c('Water', 'Flatlands', 'Hills', 'Mountains'))
   })
   
   observeEvent(input$WorldMap_click, {
@@ -122,38 +127,41 @@ server <- function(input, output) {
     
     hexes <- vect(hexes)
     
-    hex_mean <- terra::extract(world_elev, hexes, fun = mean, bind=TRUE, na.rm = TRUE) %>%
-      rename(mean_elev = ETOPO_2022_v1_60s_N90W180_bed)
+    # hex_mean <- terra::extract(world_elev, hexes, fun = mean, bind=TRUE, na.rm = TRUE) %>%
+    #   rename(mean_elev = ETOPO_2022_v1_60s_N90W180_bed)
+    # 
+    # hex_lc <- terra::extract(world_lc, hex_mean, fun = raster::modal, bind = TRUE, na.rm = TRUE) %>%
+    #   mutate(biome = stupid_join_function(GLC_SHARE_DominantLC))
+    # 
+    # hex_std <- terra::extract(world_elev, hex_lc, fun=sd, bind=TRUE) %>%
+    #   rename(sd_elev = ETOPO_2022_v1_60s_N90W180_bed)
+    # 
+    # hex_std <- hex_std %>%
+    #   mutate(Terrain = as.factor(ifelse(mean_elev < input$sealevel, 'Water', 
+    #                         ifelse(sd_elev < 150, 'Flatlands',
+    #                                 ifelse(sd_elev < 300, 'Hills',
+    #                                       'Mountains')))))
+    # 
+    # #river_hexes <- relate(hex_std, world_river, relation = 'intersects')
+    # #print(river_hexes)
+    # 
+    # hex_std <- sf::st_as_sf(hex_std)
+    # hex_out <<- hex_std
     
-    hex_lc <- terra::extract(world_lc, hex_mean, fun = raster::modal, bind = TRUE, na.rm = TRUE) %>%
-      mutate(biome = stupid_join_function(GLC_SHARE_DominantLC))
-    
-    hex_std <- terra::extract(world_elev, hex_lc, fun=sd, bind=TRUE) %>%
-      rename(sd_elev = ETOPO_2022_v1_60s_N90W180_bed)
-    
-    hex_std <- hex_std %>%
-      mutate(Terrain = as.factor(ifelse(mean_elev < input$sealevel, 'Water', 
-                            ifelse(sd_elev < 150, 'Flatlands',
-                                    ifelse(sd_elev < 300, 'Hills',
-                                          'Mountains')))))
-    
-    #river_hexes <- relate(hex_std, world_river, relation = 'intersects')
-    #print(river_hexes)
-    
-    hex_std <- sf::st_as_sf(hex_std)
-    hex_out <<- hex_std
+    hex_out <<- hexes
     
     #hex_out$River <- hex_out[world_river]
     map_bounds <- as.character(st_bbox(hex_out))
     
     leafletProxy('WorldMap') %>%
       clearShapes() %>%
-      addPolygons(data=hex_std,
-                  color = 'black',
-                  weight = 0.5,
+      addPolygons(data=hex_out,
+                  color = input$hexcolor,
+                  weight = 1,
                   opacity = 0.9,
-                  fillOpacity = 0.75,
-                  fillColor = ~terrainPal(hex_std[['Terrain']])) %>%
+                  fillOpacity = 0.1,
+                  # fillColor = ~terrainPal(hex_std[['Terrain']])
+                  ) %>%
       fitBounds(map_bounds[1], map_bounds[2], map_bounds[3], map_bounds[4])
   })
   
